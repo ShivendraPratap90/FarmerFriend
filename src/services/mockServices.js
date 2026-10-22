@@ -17,36 +17,122 @@ import {
 const delay = (ms = 1200) =>
   new Promise(resolve => setTimeout(resolve, ms));
 
-// ---- Auth Service ----
+// ---- Local User Account & Authentication Service ----
 export const authService = {
-  login: async (email, password) => {
-    await delay(1000);
-    if (!email || !password) {
-      throw new Error('Please enter email and password');
+  getUsers: () => {
+    try {
+      const stored = localStorage.getItem('ff_users_store');
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
     }
-
-    return {
-      success: true,
-      token: 'demo-jwt-token-' + Date.now(),
-      user: {
-        id: 'demo-farmer-001',
-        email,
-        name: 'Rajesh Kumar',
-        role: 'farmer',
-      },
-    };
   },
 
   register: async (data) => {
-    await delay(1200);
+    await delay(500);
+    const users = authService.getUsers();
+    
+    // Check if user already exists
+    const existing = users.find(u => u.email.toLowerCase() === data.email.toLowerCase());
+    if (existing) {
+      throw new Error('An account with this email already exists. Please log in.');
+    }
+
+    const newUser = {
+      id: 'farmer-' + Date.now(),
+      name: data.name,
+      email: data.email,
+      phone: data.phone || '',
+      password: data.password,
+      role: 'farmer',
+      state: data.state || 'Uttar Pradesh',
+      district: data.district || 'Ghaziabad',
+      village: data.village || '',
+      farmName: data.name ? `${data.name}'s Farm` : 'My Green Farm',
+      landSize: data.landSize || '5.0',
+      landUnit: data.landUnit || 'acres',
+      soilType: data.soilType || 'Alluvial',
+      primaryCrop: data.primaryCrop || 'Wheat',
+      secondaryCrops: 'Mustard, Gram, Vegetables',
+      crops: [data.primaryCrop || 'Wheat'],
+      joinedDate: new Date().toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }),
+      avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(data.name)}`,
+      kccHolder: true,
+      pmKisanBeneficiary: true,
+    };
+
+    users.push(newUser);
+    localStorage.setItem('ff_users_store', JSON.stringify(users));
+    localStorage.setItem('ff_profile', JSON.stringify(newUser));
+
     return {
       success: true,
-      message: 'Account created successfully! (Demo Mode)',
+      user: newUser,
+      message: 'Account created successfully!',
+    };
+  },
+
+  login: async (email, password) => {
+    await delay(500);
+    if (!email || !password) {
+      throw new Error('Please enter your email and password');
+    }
+
+    const users = authService.getUsers();
+    const found = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+
+    if (found) {
+      if (found.password && found.password !== password) {
+        throw new Error('Incorrect password. Please try again.');
+      }
+      localStorage.setItem('ff_profile', JSON.stringify(found));
+      return {
+        success: true,
+        token: 'auth-token-' + Date.now(),
+        user: found,
+      };
+    }
+
+    // If logging in for the first time without registration, create a realistic profile
+    const derivedName = email.split('@')[0]
+      .replace(/[._-]/g, ' ')
+      .replace(/\b\w/g, l => l.toUpperCase());
+
+    const newUser = {
+      id: 'farmer-' + Date.now(),
+      name: derivedName || 'Farmer',
+      email,
+      password,
+      role: 'farmer',
+      state: 'Uttar Pradesh',
+      district: 'Ghaziabad',
+      village: 'Govindpur',
+      farmName: `${derivedName || 'Farmer'}'s Farm`,
+      landSize: '5.0',
+      landUnit: 'acres',
+      soilType: 'Alluvial',
+      primaryCrop: 'Wheat',
+      secondaryCrops: 'Mustard, Gram',
+      crops: ['Wheat'],
+      joinedDate: new Date().toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }),
+      avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(derivedName)}`,
+      kccHolder: true,
+      pmKisanBeneficiary: true,
+    };
+
+    users.push(newUser);
+    localStorage.setItem('ff_users_store', JSON.stringify(users));
+    localStorage.setItem('ff_profile', JSON.stringify(newUser));
+
+    return {
+      success: true,
+      token: 'auth-token-' + Date.now(),
+      user: newUser,
     };
   },
 
   logout: async () => {
-    await delay(300);
+    await delay(150);
     return { success: true };
   },
 };
@@ -187,7 +273,7 @@ export const weatherService = {
       longitude: String(place.longitude),
       current:
         'temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m',
-      hourly: 'visibility,uv_index',
+      hourly: 'temperature_2m,relative_humidity_2m,precipitation_probability,visibility,uv_index',
       daily:
         'weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max',
       forecast_days: '7',
@@ -271,6 +357,24 @@ export const weatherService = {
       (hourly.uv_index?.[closestHourIndex] ?? 0) * 10
     ) / 10;
 
+    // 24-hour live hourly trends for authentic real-time forecast graphs
+    const hourlyTemps = hourly.temperature_2m || [];
+    const hourlyRains = hourly.precipitation_probability || [];
+    const hourlyHumids = hourly.relative_humidity_2m || [];
+    const hourlyTrends = [];
+    const nowMs = Date.now();
+    for (let i = 0; i < hourlyTimes.length && hourlyTrends.length < 12; i += 2) {
+      const t = new Date(hourlyTimes[i]);
+      if (t.getTime() >= nowMs - 3600000 || hourlyTrends.length > 0) {
+        hourlyTrends.push({
+          time: t.toLocaleTimeString('en-US', { hour: 'numeric', hour12: true }),
+          temp: Math.round(hourlyTemps[i] ?? current.temperature_2m),
+          rain: Math.round(hourlyRains[i] ?? 0),
+          humidity: Math.round(hourlyHumids[i] ?? current.relative_humidity_2m),
+        });
+      }
+    }
+
     const weather = {
       city: place.name,
       state: place.admin1 || place.country || '',
@@ -286,6 +390,7 @@ export const weatherService = {
       farmingPrecautions: [],
       source: 'Open-Meteo',
       updatedAt: current.time || new Date().toISOString(),
+      hourlyTrends,
     };
 
     weather.alerts = makeWeatherAlerts(weather);
@@ -300,16 +405,14 @@ export const weatherService = {
   },
 };
 
-// ---- Disease Detection Service ----
+// ---- Authentic AI Disease Detection Service (PyTorch + Grad-CAM) ----
 export const diseaseService = {
-  analyzeImage: async (crop, imageFile) => {
-    const API_URL = 'http://localhost:8000/api/detect-disease';
+  identifyCrop: async (imageFile) => {
+    const API_URL = 'http://localhost:8000/api/identify-crop';
+    const formData = new FormData();
+    formData.append('file', imageFile);
 
     try {
-      const formData = new FormData();
-      formData.append('crop', crop || '');
-      formData.append('file', imageFile);
-
       const response = await fetch(API_URL, {
         method: 'POST',
         body: formData,
@@ -317,7 +420,28 @@ export const diseaseService = {
 
       if (response.ok) {
         const json = await response.json();
+        return json.data;
+      }
+    } catch (err) {
+      console.warn('OpenPlants crop identification offline:', err);
+    }
+    return null;
+  },
+  analyzeImage: async (crop, imageFile) => {
+    const API_URL = 'http://localhost:8000/api/detect-disease';
 
+    const formData = new FormData();
+    formData.append('crop', crop || '');
+    formData.append('file', imageFile);
+
+    try {
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (response.ok) {
+        const json = await response.json();
         return {
           success: true,
           data: {
@@ -327,34 +451,16 @@ export const diseaseService = {
         };
       }
 
-      console.warn(
-        'FastAPI backend returned non-OK status; using local fallback.'
-      );
+      const errData = await response.json().catch(() => ({}));
+      throw new Error(errData.detail || 'Server encountered an error during neural inference.');
     } catch (err) {
-      console.warn(
-        'FastAPI backend not reachable; using local fallback:',
-        err.message
+      if (err.message && !err.message.includes('Failed to fetch')) {
+        throw err;
+      }
+      throw new Error(
+        'FastAPI AI Backend is currently offline at http://localhost:8000. Please start the backend service to run actual PyTorch neural network diagnosis with Grad-CAM visualization.'
       );
     }
-
-    await delay(1500);
-
-    const diseases =
-      CROP_DISEASES[crop?.toLowerCase()] || CROP_DISEASES['wheat'];
-
-    const randomDisease =
-      diseases[Math.floor(Math.random() * diseases.length)];
-
-    return {
-      success: true,
-      data: {
-        ...randomDisease,
-        analyzedAt: new Date().toISOString(),
-        cropAnalyzed: crop,
-        disclaimer:
-          'This is a simulated demo prediction, not real AI analysis. Consult an agriculture expert for actual diagnosis.',
-      },
-    };
   },
 };
 
@@ -654,58 +760,60 @@ export const schemesService = {
   },
 };
 
-// ---- AI Chat Service ----
+// ---- AI Chat Service (Bilingual English + Hindi) ----
 export const chatService = {
   getResponse: async (message, language = 'en') => {
-    await delay(1200);
+    const API_URL = 'http://localhost:8000/api/chat';
 
+    try {
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message, language }),
+      });
+
+      if (response.ok) {
+        const json = await response.json();
+        return {
+          success: true,
+          data: {
+            ...json.data,
+            timestamp: new Date().toISOString(),
+          },
+        };
+      }
+    } catch (err) {
+      console.warn('FastAPI chat backend offline, using client-side agronomic knowledge fallback:', err.message);
+    }
+
+    // Client-side agronomic intelligence fallback
+    await delay(700);
     const msg = message.toLowerCase();
-    const responses =
-      language === 'hi' ? CHAT_RESPONSES_HI : CHAT_RESPONSES_EN;
+    const responses = language === 'hi' ? CHAT_RESPONSES_HI : CHAT_RESPONSES_EN;
 
     let responseKey = 'default';
-
-    if (
-      msg.includes('irrigat') ||
-      msg.includes('water') ||
-      msg.includes('पानी') ||
-      msg.includes('सिंचाई')
-    ) {
+    if (msg.includes('irrigat') || msg.includes('water') || msg.includes('पानी') || msg.includes('सिंचाई')) {
       responseKey = 'irrigation';
-    } else if (
-      msg.includes('disease') ||
-      msg.includes('pest') ||
-      msg.includes('रोग') ||
-      msg.includes('कीट')
-    ) {
+    } else if (msg.includes('disease') || msg.includes('pest') || msg.includes('रोग') || msg.includes('कीट') || msg.includes('रतुआ') || msg.includes('ब्लास्ट')) {
       responseKey = 'disease';
-    } else if (
-      msg.includes('weather') ||
-      msg.includes('rain') ||
-      msg.includes('मौसम') ||
-      msg.includes('बारिश')
-    ) {
+    } else if (msg.includes('weather') || msg.includes('rain') || msg.includes('मौसम') || msg.includes('बारिश') || msg.includes('पाला')) {
       responseKey = 'weather';
-    } else if (
-      msg.includes('fertilizer') ||
-      msg.includes('urea') ||
-      msg.includes('npk') ||
-      msg.includes('खाद')
-    ) {
+    } else if (msg.includes('fertilizer') || msg.includes('urea') || msg.includes('npk') || msg.includes('खाद') || msg.includes('यूरिया') || msg.includes('डीएपी')) {
       responseKey = 'fertilizer';
-    } else if (
-      msg.includes('crop') ||
-      msg.includes('plant') ||
-      msg.includes('फसल') ||
-      msg.includes('किस')
-    ) {
+    } else if (msg.includes('kisan') || msg.includes('pm kisan') || msg.includes('योजना') || msg.includes('सब्सिडी') || msg.includes('scheme')) {
+      return {
+        success: true,
+        data: {
+          message: language === 'hi'
+            ? '🏛️ **पीएम-किसान योजना सहायता:** पात्र किसानों को ₹6,000 प्रति वर्ष (₹2,000 की 3 किस्तें) मिलती हैं। किस्त पाने के लिए `pmkisan.gov.in` पर आधार eKYC व बैंक खाता NPCI से लिंक होना अनिवार्य है। हेल्पलाइन: 155261.'
+            : '🏛️ **PM-KISAN Scheme Support:** Eligible farmers receive ₹6,000/year in 3 installments of ₹2,000. Ensure your Aadhaar eKYC is completed and bank account is NPCI-linked at `pmkisan.gov.in`. Helpline: 155261.',
+          type: 'assistant',
+          timestamp: new Date().toISOString(),
+        }
+      };
+    } else if (msg.includes('crop') || msg.includes('plant') || msg.includes('फसल') || msg.includes('गेहूं') || msg.includes('धान')) {
       responseKey = 'crop_selection';
-    } else if (
-      msg.includes('sow') ||
-      msg.includes('plant') ||
-      msg.includes('बुवाई') ||
-      msg.includes('कब लगाएं')
-    ) {
+    } else if (msg.includes('sow') || msg.includes('बुवाई')) {
       responseKey = 'sowing';
     }
 

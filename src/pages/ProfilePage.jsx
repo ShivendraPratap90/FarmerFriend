@@ -10,22 +10,40 @@ export const ProfilePage = () => {
   const { profile, updateProfile, showToast } = useApp();
 
   const [formData, setFormData] = useState({
-    name: profile?.name || 'Rajesh Kumar',
-    email: profile?.email || 'rajesh.kumar@demo.com',
-    phone: profile?.phone || '+91 98765 43210',
+    name: profile?.name || '',
+    email: profile?.email || '',
+    phone: profile?.phone || '',
     state: profile?.state || 'Uttar Pradesh',
-    district: profile?.district || 'Lucknow',
-    village: profile?.village || 'Mohanlalganj',
-    landSize: profile?.landSize || '5.5',
+    district: profile?.district || 'Ghaziabad',
+    village: profile?.village || '',
+    landSize: profile?.landSize || '5.0',
     landUnit: profile?.landUnit || 'acres',
     soilType: profile?.soilType || 'Alluvial',
     primaryCrop: profile?.primaryCrop || 'Wheat',
-    secondaryCrops: 'Mustard, Potato, Gram',
-    irrigationSource: 'Tube Well & Drip',
-    farmingMethod: 'Precision Farming',
-    kccHolder: true,
-    pmKisanBeneficiary: true,
+    secondaryCrops: profile?.secondaryCrops || 'Mustard, Potato, Gram',
+    irrigationSource: profile?.irrigationSource || 'Tube Well & Drip',
+    farmingMethod: profile?.farmingMethod || 'Precision Farming',
+    kccHolder: profile?.kccHolder ?? true,
+    pmKisanBeneficiary: profile?.pmKisanBeneficiary ?? true,
   });
+
+  React.useEffect(() => {
+    if (profile) {
+      setFormData(prev => ({
+        ...prev,
+        name: profile.name || prev.name,
+        email: profile.email || prev.email,
+        phone: profile.phone || prev.phone,
+        state: profile.state || prev.state,
+        district: profile.district || prev.district,
+        village: profile.village || prev.village,
+        landSize: profile.landSize || prev.landSize,
+        landUnit: profile.landUnit || prev.landUnit,
+        soilType: profile.soilType || prev.soilType,
+        primaryCrop: profile.primaryCrop || prev.primaryCrop,
+      }));
+    }
+  }, [profile]);
 
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);

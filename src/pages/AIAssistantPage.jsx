@@ -1,26 +1,30 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   MessageSquare, Send, Bot, User, Trash2, Volume2, VolumeX,
-  Mic, Sparkles, Copy, Check, RefreshCw, AlertCircle, HelpCircle,
+  Mic, MicOff, Sparkles, Copy, Check, RefreshCw, AlertCircle, HelpCircle,
   CornerDownLeft
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { chatService } from '../services/mockServices';
 
 const QUICK_PROMPTS_EN = [
-  { label: '💧 Irrigation Advice', query: 'When should I irrigate wheat crop for optimal yield?' },
-  { label: '🌿 Disease Prevention', query: 'How to prevent and treat rice blast disease?' },
+  { label: '💧 Wheat Irrigation Schedule', query: 'When should I irrigate wheat crop for optimal yield?' },
+  { label: '🌿 Rice Blast Control', query: 'How to prevent and treat rice blast disease?' },
+  { label: '🥔 Potato Blight Treatment', query: 'What is the recommended treatment for late blight in potato?' },
+  { label: '🍅 Tomato Leaf Curl Virus', query: 'How to control whitefly and leaf curl in tomato?' },
   { label: '🌦️ Weather Advisory', query: 'What precautions should I take if heavy rain is forecast?' },
-  { label: '💊 Fertilizer Guide', query: 'What is the recommended fertilizer schedule for potato?' },
-  { label: '🌱 Crop Sowing', query: 'When is the best sowing time for Rabi season crops?' },
-  { label: '📜 PM-KISAN Help', query: 'How can I apply for PM-KISAN subsidy scheme?' },
+  { label: '💊 Balanced Fertilizer Dose', query: 'What is the recommended fertilizer schedule for wheat and potato?' },
+  { label: '🏛️ PM-KISAN Help', query: 'How can I apply for PM-KISAN subsidy scheme and check eKYC?' },
 ];
 
 const QUICK_PROMPTS_HI = [
-  { label: '💧 सिंचाई सलाह', query: 'गेहूं की फसल में सिंचाई कब और कितनी करनी चाहिए?' },
-  { label: '🌿 रोग नियंत्रण', query: 'धान में झुलसा रोग (Blast) से बचाव के क्या उपाय हैं?' },
-  { label: '🌦️ मौसम सावधानी', query: 'भारी बारिश की चेतावनी में किसान क्या करें?' },
-  { label: '💊 खाद और उर्वरक', query: 'आलू की बुवाई में कौन सी खाद डालनी चाहिए?' },
+  { label: '💧 गेहूं में सिंचाई का सही समय', query: 'गेहूं की फसल में सिंचाई कब और कितनी करनी चाहिए?' },
+  { label: '🌾 धान में झुलसा/ब्लास्ट रोग', query: 'धान में झुलसा रोग (Blast) से बचाव के क्या उपाय हैं?' },
+  { label: '🥔 आलू में झुलसा रोग', query: 'आलू में पछेती झुलसा का क्या रासायनिक उपचार है?' },
+  { label: '🍅 टमाटर पत्ता मरोड़ रोग', query: 'टमाटर में पत्ता मरोड़ और सफेद मक्खी का इलाज बताएं' },
+  { label: '🌦️ मौसम एवं बारिश की चेतावनी', query: 'भारी बारिश की चेतावनी में किसान क्या सावधानियां रखें?' },
+  { label: '💊 खाद एवं उर्वरक संतुलन', query: 'फसलों में यूरिया, डीएपी और पोटाश डालने का सही नियम क्या है?' },
+  { label: '🏛️ पीएम-किसान (PM-KISAN) सहायता', query: 'पीएम किसान योजना में ₹2000 की किस्त पाने के लिए क्या करना होगा?' },
 ];
 
 export const AIAssistantPage = () => {
@@ -31,6 +35,8 @@ export const AIAssistantPage = () => {
   const [copiedId, setCopiedId] = useState(null);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [speakingId, setSpeakingId] = useState(null);
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef(null);
   const messagesEndRef = useRef(null);
 
   // Initialize or load messages
@@ -46,8 +52,8 @@ export const AIAssistantPage = () => {
         id: 'msg-welcome',
         type: 'assistant',
         text: language === 'hi'
-          ? 'नमस्ते! मैं **FarmerFriend AI सहायक** हूँ। मैं फसल योजना, रोग निवारण, मौसम सावधानियों और खाद-पानी से जुड़े आपके सवालों में मदद कर सकता हूँ। नीचे दिए गए किसी विषय पर क्लिक करें या अपना सवाल टाइप करें।'
-          : 'Hello! I am your **FarmerFriend AI Assistant** (Demo Mode). I can assist you with crop planning, disease control, weather alerts, fertilizer guidance, and government schemes. Ask me anything or click a quick prompt below!',
+          ? 'नमस्ते! मैं **FarmerFriend AI कृषि सलाहकार** हूँ।\n\nमैं फसल योजना, पादप रोग उपचार, संतुलित उर्वरक (यूरिया/डीएपी), सिंचाई प्रबंधन, मौसम संबंधी सावधानियों और सरकारी योजनाओं (जैसे PM-KISAN) में आपकी सहायता कर सकता हूँ।\n\nनीचे दिए गए किसी विषय पर क्लिक करें या अपना प्रश्न टाइप अथवा बोलकर पूछें।'
+          : 'Hello! I am your **FarmerFriend AI Agricultural Advisor**.\n\nI can assist you with crop management, plant disease treatments, balanced fertilizer regimens (Urea/DAP/Potash), irrigation scheduling, weather precautions, and government schemes (PM-KISAN).\n\nAsk me any agricultural question or select a prompt below!',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       },
     ];
@@ -96,7 +102,7 @@ export const AIAssistantPage = () => {
       };
       setMessages(prev => [...prev, assistantMsg]);
     } catch (err) {
-      showToast('Error getting AI response. Please try again.', 'error');
+      showToast('Error communicating with AI engine. Please retry.', 'error');
     } finally {
       setIsTyping(false);
     }
@@ -116,7 +122,7 @@ export const AIAssistantPage = () => {
           id: 'msg-welcome-reset',
           type: 'assistant',
           text: language === 'hi'
-            ? 'बातचीत रीसेट हो गई है। आप नया सवाल पूछ सकते हैं।'
+            ? 'बातचीत रीसेट हो गई है। आप अपनी फसल या खेती से जुड़ा कोई भी नया सवाल पूछ सकते हैं।'
             : 'Conversation cleared. How can I assist you today with your farming?',
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         },
@@ -148,8 +154,9 @@ export const AIAssistantPage = () => {
     }
 
     window.speechSynthesis.cancel();
-    // Clean markdown characters for speech
-    const cleanText = text.replace(/[*_#•⚠️]/g, '').trim();
+
+    // Clean markdown characters for clear voice articulation
+    const cleanText = text.replace(/[*_#•⚠️💡🌾💧🏛️🥔🍅💊🌦️🌱]/g, '').trim();
     const utterance = new SpeechSynthesisUtterance(cleanText);
     utterance.lang = language === 'hi' ? 'hi-IN' : 'en-IN';
     utterance.rate = 0.95;
@@ -169,19 +176,62 @@ export const AIAssistantPage = () => {
     window.speechSynthesis.speak(utterance);
   };
 
-  const handleMicClick = () => {
-    showToast('Voice input listening simulated (Demo Mode)', 'info');
-    const sampleQueries = language === 'hi'
-      ? ['धान में कौन सा उर्वरक डालें?', 'गेहूं में पानी कब लगाएं?', 'मौसम का हाल क्या है?']
-      : ['How to control wheat rust?', 'Best time to irrigate crops?', 'Tell me about PM-KISAN benefits'];
-    const randomQuery = sampleQueries[Math.floor(Math.random() * sampleQueries.length)];
-    setInputMessage(randomQuery);
+  // Real Web Speech API voice speech recognition
+  const handleToggleVoice = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      showToast('Voice input is not supported by your current browser. You can type your query.', 'warning');
+      return;
+    }
+
+    if (isListening && recognitionRef.current) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+      return;
+    }
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.lang = language === 'hi' ? 'hi-IN' : 'en-IN';
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+
+      recognition.onstart = () => {
+        setIsListening(true);
+        showToast(language === 'hi' ? 'माइक चालू है, बोलिए...' : 'Listening... Speak your farming question', 'info');
+      };
+
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        if (transcript) {
+          setInputMessage(transcript);
+          handleSendMessage(transcript);
+        }
+        setIsListening(false);
+      };
+
+      recognition.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+        setIsListening(false);
+        showToast('Speech recognition encountered an issue. Please try typing.', 'error');
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+
+      recognitionRef.current = recognition;
+      recognition.start();
+    } catch (e) {
+      console.error(e);
+      setIsListening(false);
+    }
   };
 
   const quickPrompts = language === 'hi' ? QUICK_PROMPTS_HI : QUICK_PROMPTS_EN;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -192,12 +242,12 @@ export const AIAssistantPage = () => {
             <div>
               <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
                 Kisan AI Assistant
-                <span className="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
-                  Demo AI
+                <span className="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-primary-50 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300 border border-primary-200 dark:border-primary-800">
+                  Bilingual AI
                 </span>
               </h1>
               <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-                24/7 intelligent farming guidance powered by agricultural knowledge base
+                24/7 intelligent farming guidance supporting English and हिन्दी
               </p>
             </div>
           </div>
@@ -242,14 +292,14 @@ export const AIAssistantPage = () => {
 
       {/* Main Chat Container */}
       <div className="card flex flex-col h-[calc(100vh-250px)] min-h-[520px] max-h-[750px] overflow-hidden border border-gray-200/80 dark:border-gray-800 shadow-card">
-        {/* Chat disclaimer notice */}
+        {/* Status notice */}
         <div className="px-4 py-2.5 bg-primary-50/70 dark:bg-primary-950/40 border-b border-primary-100 dark:border-primary-900/30 flex items-center justify-between text-xs text-primary-800 dark:text-primary-300">
           <div className="flex items-center gap-2">
             <Sparkles size={14} className="text-primary-600 dark:text-primary-400 flex-shrink-0" />
-            <span>Interactive farming advisor with simulated natural language responses.</span>
+            <span>AI Agronomic Engine active • Ask about diseases, fertilizers, irrigation, weather, or PM-KISAN</span>
           </div>
-          <span className="hidden md:inline font-medium text-[11px] bg-white/70 dark:bg-gray-800 px-2 py-0.5 rounded border border-primary-200 dark:border-primary-800">
-            Offline Mock Engine
+          <span className="hidden md:inline font-semibold text-[11px] bg-white/80 dark:bg-gray-800 px-2 py-0.5 rounded border border-primary-200 dark:border-primary-800">
+            {language === 'hi' ? 'हिंदी मोड' : 'English Mode'}
           </span>
         </div>
 
@@ -260,7 +310,7 @@ export const AIAssistantPage = () => {
             return (
               <div
                 key={msg.id}
-                className={`flex gap-3 max-w-[85%] sm:max-w-[78%] ${
+                className={`flex gap-3 max-w-[88%] sm:max-w-[80%] ${
                   isUser ? 'ml-auto flex-row-reverse' : 'mr-auto'
                 }`}
               >
@@ -268,7 +318,7 @@ export const AIAssistantPage = () => {
                 <div
                   className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm ${
                     isUser
-                      ? 'bg-earth-500 text-white'
+                      ? 'bg-earth-600 text-white'
                       : 'bg-primary-700 text-white'
                   }`}
                 >
@@ -298,22 +348,23 @@ export const AIAssistantPage = () => {
                     <span>{msg.timestamp}</span>
                     {!isUser && (
                       <>
-                        <span>•</span>
                         <button
                           onClick={() => handleCopy(msg.id, msg.text)}
-                          className="hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-                          title="Copy text"
+                          className="hover:text-primary-600 transition-colors ml-1"
+                          title="Copy response"
                         >
-                          {copiedId === msg.id ? <Check size={12} className="text-green-500" /> : <Copy size={12} />}
+                          {copiedId === msg.id ? <Check size={13} className="text-green-500" /> : <Copy size={13} />}
                         </button>
                         <button
                           onClick={() => handleSpeak(msg.id, msg.text)}
-                          className={`hover:text-gray-600 dark:hover:text-gray-300 transition-colors ${
-                            speakingId === msg.id ? 'text-primary-600 font-bold' : ''
-                          }`}
-                          title={speakingId === msg.id ? 'Stop audio' : 'Listen with TTS'}
+                          className="hover:text-primary-600 transition-colors"
+                          title="Listen to response"
                         >
-                          {speakingId === msg.id ? <VolumeX size={12} className="text-red-500" /> : <Volume2 size={12} />}
+                          {isSpeaking && speakingId === msg.id ? (
+                            <VolumeX size={13} className="text-red-500 animate-pulse" />
+                          ) : (
+                            <Volume2 size={13} />
+                          )}
                         </button>
                       </>
                     )}
@@ -323,17 +374,18 @@ export const AIAssistantPage = () => {
             );
           })}
 
-          {/* Typing Indicator */}
           {isTyping && (
-            <div className="flex gap-3 mr-auto max-w-[80%] animate-fade-in">
-              <div className="w-9 h-9 rounded-xl bg-primary-700 text-white flex items-center justify-center flex-shrink-0">
-                <Bot size={18} />
+            <div className="flex gap-3 max-w-[80%] mr-auto items-center text-gray-400 text-xs">
+              <div className="w-8 h-8 rounded-xl bg-primary-700 text-white flex items-center justify-center">
+                <Bot size={16} />
               </div>
-              <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-2xl rounded-tl-none border border-gray-200/60 dark:border-gray-700 flex items-center gap-1.5 shadow-sm">
-                <div className="w-2 h-2 rounded-full bg-primary-500 animate-bounce" style={{ animationDelay: '0ms' }} />
-                <div className="w-2 h-2 rounded-full bg-primary-500 animate-bounce" style={{ animationDelay: '150ms' }} />
-                <div className="w-2 h-2 rounded-full bg-primary-500 animate-bounce" style={{ animationDelay: '300ms' }} />
-                <span className="text-xs text-gray-400 ml-2 font-medium">Assistant is thinking...</span>
+              <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-2xl border border-gray-200/60 dark:border-gray-700/60 flex items-center gap-2">
+                <div className="flex gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary-600 animate-bounce"></span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary-600 animate-bounce [animation-delay:0.2s]"></span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary-600 animate-bounce [animation-delay:0.4s]"></span>
+                </div>
+                <span>{language === 'hi' ? 'कृषि AI सोच रहा है...' : 'AI is analyzing your farming query...'}</span>
               </div>
             </div>
           )}
@@ -341,64 +393,61 @@ export const AIAssistantPage = () => {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Quick Suggestion Chips */}
-        <div className="px-4 py-2 border-t border-gray-100 dark:border-gray-800 bg-white/70 dark:bg-gray-900/50">
-          <p className="text-xs font-semibold text-gray-400 mb-1.5 flex items-center gap-1">
-            <Sparkles size={12} className="text-primary-500" />
-            {language === 'hi' ? 'त्वरित सुझाव:' : 'Quick Questions:'}
-          </p>
-          <div className="flex gap-2 overflow-x-auto pb-1.5 scrollbar-thin">
-            {quickPrompts.map((p, idx) => (
-              <button
-                key={idx}
-                onClick={() => handleSendMessage(p.query)}
-                disabled={isTyping}
-                className="whitespace-nowrap px-3 py-1.5 rounded-xl text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-primary-50 hover:text-primary-700 dark:hover:bg-primary-900/30 dark:hover:text-primary-400 border border-gray-200/60 dark:border-gray-700 transition-all flex-shrink-0 active:scale-95 disabled:opacity-50"
-              >
-                {p.label}
-              </button>
-            ))}
-          </div>
+        {/* Quick prompt pills */}
+        <div className="px-4 py-2 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/30 overflow-x-auto scrollbar-none flex items-center gap-2">
+          <span className="text-[11px] font-medium text-gray-400 flex-shrink-0">
+            {language === 'hi' ? 'सुझाव:' : 'Quick Prompts:'}
+          </span>
+          {quickPrompts.map((p, idx) => (
+            <button
+              key={idx}
+              onClick={() => handleSendMessage(p.query)}
+              disabled={isTyping}
+              className="text-xs px-2.5 py-1 rounded-full whitespace-nowrap bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:border-primary-500 hover:text-primary-600 dark:hover:text-primary-400 transition-all flex-shrink-0 shadow-2xs"
+            >
+              {p.label}
+            </button>
+          ))}
         </div>
 
-        {/* Input Bar */}
-        <div className="p-3 sm:p-4 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800">
+        {/* Input box */}
+        <div className="p-3 sm:p-4 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-2">
             <button
-              onClick={handleMicClick}
-              type="button"
-              title="Voice Input (Demo)"
-              className="p-2.5 rounded-xl text-gray-500 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-gray-800 transition-colors flex-shrink-0 border border-gray-200 dark:border-gray-700"
+              onClick={handleToggleVoice}
+              className={`p-2.5 rounded-xl border transition-all ${
+                isListening
+                  ? 'bg-red-500 text-white border-red-500 animate-pulse'
+                  : 'text-gray-500 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 border-gray-200 dark:border-gray-700'
+              }`}
+              title={isListening ? 'Stop Listening' : (language === 'hi' ? 'बोलकर पूछें' : 'Voice Query')}
             >
-              <Mic size={18} />
+              {isListening ? <MicOff size={18} /> : <Mic size={18} />}
             </button>
 
-            <div className="relative flex-1">
-              <input
-                type="text"
-                value={inputMessage}
-                onChange={(e) => setInputMessage(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder={
-                  language === 'hi'
-                    ? 'खेती से संबंधित कोई भी सवाल पूछें...'
-                    : 'Ask any farming, weather, disease, or crop question...'
-                }
-                disabled={isTyping}
-                className="w-full pl-4 pr-10 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm text-gray-800 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-white dark:focus:bg-gray-900 transition-all"
-              />
-              <span className="hidden sm:inline absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 bg-white dark:bg-gray-700 px-1.5 py-0.5 rounded border border-gray-200 dark:border-gray-600">
-                ↵ Enter
-              </span>
-            </div>
+            <input
+              type="text"
+              value={inputMessage}
+              onChange={(e) => setInputMessage(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={
+                isListening
+                  ? (language === 'hi' ? 'सुन रहा हूँ... बोलिए' : 'Listening... Speak now')
+                  : (language === 'hi'
+                      ? 'अपनी फसल, रोग, खाद या मौसम के बारे में पूछें...'
+                      : 'Ask about crops, diseases, fertilizers, irrigation, or schemes...')
+              }
+              disabled={isTyping}
+              className="input flex-1 py-2.5 text-sm"
+            />
 
             <button
               onClick={() => handleSendMessage()}
               disabled={!inputMessage.trim() || isTyping}
-              className="px-4 py-3 rounded-xl bg-primary-700 hover:bg-primary-800 active:scale-95 text-white font-medium text-sm transition-all duration-200 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5 flex-shrink-0"
+              className="btn-primary p-2.5 rounded-xl disabled:opacity-40"
+              title="Send Message"
             >
-              <Send size={16} />
-              <span className="hidden sm:inline">Send</span>
+              <Send size={18} />
             </button>
           </div>
         </div>

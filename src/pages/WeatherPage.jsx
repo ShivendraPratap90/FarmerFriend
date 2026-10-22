@@ -22,7 +22,7 @@ import {
 } from 'recharts';
 
 import { weatherService } from '../services/mockServices';
-import { WEATHER_TREND_DATA } from '../data/demoData';
+// Live forecast trends from Open-Meteo API
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
 
 const WEATHER_ICONS = {
@@ -421,91 +421,69 @@ export const WeatherPage = () => {
             </div>
           </div>
 
-          {/* Historical-style chart: still demo data */}
-          <div className="card p-5">
-            <h2 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">
-              Seasonal Weather Trends
-            </h2>
+          {/* Live 24-Hour Forecast Trends Chart */}
+          {weather.hourlyTrends && weather.hourlyTrends.length > 0 && (
+            <div className="card p-5">
+              <h2 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">
+                24-Hour Live Forecast Trends
+              </h2>
 
-            <p className="text-xs text-gray-400 mb-4">
-              Illustrative monthly temperature and rainfall pattern — demo
-              data, not live historical observations.
-            </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
+                Real-time hourly temperature and precipitation probability for {weather.city} from live Open-Meteo observations.
+              </p>
 
-            <ResponsiveContainer width="100%" height={220}>
-              <AreaChart data={WEATHER_TREND_DATA}>
-                <defs>
-                  <linearGradient
-                    id="tempGrad"
-                    x1="0"
-                    y1="0"
-                    x2="0"
-                    y2="1"
-                  >
-                    <stop
-                      offset="5%"
-                      stopColor="#f59e0b"
-                      stopOpacity={0.3}
-                    />
-                    <stop
-                      offset="95%"
-                      stopColor="#f59e0b"
-                      stopOpacity={0}
-                    />
-                  </linearGradient>
+              <ResponsiveContainer width="100%" height={230}>
+                <AreaChart data={weather.hourlyTrends}>
+                  <defs>
+                    <linearGradient id="tempGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.35} />
+                      <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
+                    </linearGradient>
 
-                  <linearGradient
-                    id="rainGrad"
-                    x1="0"
-                    y1="0"
-                    x2="0"
-                    y2="1"
-                  >
-                    <stop
-                      offset="5%"
-                      stopColor="#3b82f6"
-                      stopOpacity={0.3}
-                    />
-                    <stop
-                      offset="95%"
-                      stopColor="#3b82f6"
-                      stopOpacity={0}
-                    />
-                  </linearGradient>
-                </defs>
+                    <linearGradient id="rainGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.35} />
+                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
 
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="month" tick={{ fontSize: 11 }} />
-                <YAxis yAxisId="left" tick={{ fontSize: 11 }} />
-                <YAxis
-                  yAxisId="right"
-                  orientation="right"
-                  tick={{ fontSize: 11 }}
-                />
-                <Tooltip />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" className="dark:stroke-gray-700" />
+                  <XAxis dataKey="time" tick={{ fontSize: 11 }} stroke="#9ca3af" />
+                  <YAxis yAxisId="left" tick={{ fontSize: 11 }} stroke="#f59e0b" unit="°C" domain={['auto', 'auto']} />
+                  <YAxis
+                    yAxisId="right"
+                    orientation="right"
+                    tick={{ fontSize: 11 }}
+                    stroke="#3b82f6"
+                    unit="%"
+                    domain={[0, 100]}
+                  />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: '#1f2937', color: '#f3f4f6', borderRadius: '8px', border: 'none' }}
+                  />
 
-                <Area
-                  yAxisId="left"
-                  type="monotone"
-                  dataKey="temp"
-                  name="Temperature (°C)"
-                  stroke="#f59e0b"
-                  fill="url(#tempGrad)"
-                  strokeWidth={2}
-                />
+                  <Area
+                    yAxisId="left"
+                    type="monotone"
+                    dataKey="temp"
+                    name="Temperature (°C)"
+                    stroke="#f59e0b"
+                    fill="url(#tempGrad)"
+                    strokeWidth={2}
+                  />
 
-                <Area
-                  yAxisId="right"
-                  type="monotone"
-                  dataKey="rainfall"
-                  name="Rainfall (mm)"
-                  stroke="#3b82f6"
-                  fill="url(#rainGrad)"
-                  strokeWidth={2}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
+                  <Area
+                    yAxisId="right"
+                    type="monotone"
+                    dataKey="rain"
+                    name="Rain Probability (%)"
+                    stroke="#3b82f6"
+                    fill="url(#rainGrad)"
+                    strokeWidth={2}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </>
       )}
     </div>

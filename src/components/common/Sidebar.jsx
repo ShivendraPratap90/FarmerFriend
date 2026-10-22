@@ -60,10 +60,10 @@ export const Sidebar = ({ isOpen, onClose }) => {
       <div className="px-4 py-4 border-b border-primary-600">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-            {profile?.name?.charAt(0) || 'R'}
+            {profile?.name?.charAt(0) || 'F'}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-white font-semibold text-sm truncate">{profile?.name || 'Rajesh Kumar'}</p>
+            <p className="text-white font-semibold text-sm truncate">{profile?.name || 'Farmer'}</p>
             <p className="text-primary-200 text-xs truncate">{profile?.primaryCrop || 'Wheat'} Farmer • {profile?.landSize || '5.5'} acres</p>
           </div>
         </div>

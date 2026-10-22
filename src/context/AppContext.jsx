@@ -33,16 +33,20 @@ export const AppProvider = ({ children }) => {
   const login = (userData) => {
     const u = userData || DEMO_USER;
     setUser(u);
+    setProfile(u);
     setIsLoggedIn(true);
     localStorage.setItem('ff_auth', 'true');
     localStorage.setItem('ff_user', JSON.stringify(u));
+    localStorage.setItem('ff_profile', JSON.stringify(u));
   };
 
   const logout = () => {
     setUser(null);
+    setProfile(null);
     setIsLoggedIn(false);
     localStorage.removeItem('ff_auth');
     localStorage.removeItem('ff_user');
+    localStorage.removeItem('ff_profile');
   };
 
   const updateSettings = (newSettings) => {

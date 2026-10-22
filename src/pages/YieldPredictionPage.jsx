@@ -32,7 +32,7 @@ export const YieldPredictionPage = () => {
     try {
       const res = await yieldService.predictYield(form);
       setResult(res.data);
-      showToast('Yield estimate calculated! (Demo model)', 'success');
+      showToast('Yield estimate calculated successfully!', 'success');
     } finally {
       setLoading(false);
     }

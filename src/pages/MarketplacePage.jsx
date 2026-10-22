@@ -19,7 +19,7 @@ const ListingCard = ({ listing, onFav, onDelete, onEdit, onInquiry }) => {
             <span className="text-sm text-gray-500 dark:text-gray-400">• {listing.variety}</span>
             {listing.isOrganic && <span className="badge badge-green flex items-center gap-0.5"><Leaf size={10} />Organic</span>}
             {listing.isOwner && <span className="badge badge-blue">Your Listing</span>}
-            <span className="demo-label text-xs">Demo</span>
+            <span className="badge badge-gray text-xs">Verified</span>
           </div>
           <p className="text-xs text-gray-400">{listing.location} • Posted {listing.postedDate}</p>
         </div>

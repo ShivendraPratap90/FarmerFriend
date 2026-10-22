@@ -56,7 +56,7 @@ export const DashboardPage = () => {
             <span className="text-sm text-gray-500 dark:text-gray-400">{todayStr}</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">
-            {getGreeting()}, {profile?.name?.split(' ')[0] || 'Rajesh'}! 👋
+            {getGreeting()}, {profile?.name?.split(' ')[0] || 'Farmer'}! 👋
           </h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-1.5">
             <MapPin size={14} />

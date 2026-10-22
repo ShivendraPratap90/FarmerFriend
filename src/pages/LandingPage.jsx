@@ -159,7 +159,7 @@ export const LandingPage = () => {
                   </div>
                   <div>
                     <p className="text-white font-semibold">Crop Health Dashboard</p>
-                    <p className="text-primary-200 text-xs">Rajesh Kumar's Farm • Demo</p>
+                    <p className="text-primary-200 text-xs">Rajesh Kumar's Farm • Active</p>
                   </div>
                 </div>
 

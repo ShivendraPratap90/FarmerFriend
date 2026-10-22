@@ -58,12 +58,12 @@ export const RegisterPage = () => {
     if (Object.keys(errs).length) { setErrors(errs); return; }
     setLoading(true);
     try {
-      await authService.register(form);
-      login({ name: form.name, email: form.email });
-      showToast('Account created! Welcome to FarmerFriend 🌾', 'success');
+      const res = await authService.register(form);
+      login(res.user);
+      showToast(`Account created! Welcome, ${res.user.name} 🌾`, 'success');
       navigate('/dashboard');
     } catch (err) {
-      showToast('Registration failed. Please try again.', 'error');
+      showToast(err.message || 'Registration failed. Please try again.', 'error');
     } finally {
       setLoading(false);
     }

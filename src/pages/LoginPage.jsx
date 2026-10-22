@@ -31,10 +31,10 @@ export const LoginPage = () => {
     try {
       const res = await authService.login(form.email, form.password);
       login(res.user);
-      showToast('Welcome back, Rajesh! 🌾 (Demo Login)', 'success');
+      showToast(`Welcome back, ${res.user.name}! 🌾`, 'success');
       navigate('/dashboard');
     } catch (err) {
-      showToast('Login failed. Please try again.', 'error');
+      showToast(err.message || 'Login failed. Please check your email and password.', 'error');
     } finally {
       setLoading(false);
     }

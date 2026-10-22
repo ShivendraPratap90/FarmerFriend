@@ -38,7 +38,7 @@ export const Navbar = ({ onMenuClick }) => {
 
   const handleSearch = (e) => {
     if (e.key === 'Enter' && searchQuery.trim()) {
-      showToast(`Search for "${searchQuery}" - Demo mode`, 'info');
+      showToast(`Searching for "${searchQuery}"...`, 'info');
     }
   };
 
@@ -129,10 +129,10 @@ export const Navbar = ({ onMenuClick }) => {
             className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           >
             <div className="w-8 h-8 bg-primary-700 rounded-full flex items-center justify-center text-white font-bold text-sm">
-              {profile?.name?.charAt(0) || 'R'}
+              {profile?.name?.charAt(0) || 'F'}
             </div>
             <span className="hidden md:block text-sm font-medium text-gray-700 dark:text-gray-300 max-w-[100px] truncate">
-              {profile?.name?.split(' ')[0] || 'Rajesh'}
+              {profile?.name?.split(' ')[0] || 'Farmer'}
             </span>
             <ChevronDown size={14} className={`hidden md:block text-gray-400 transition-transform ${profileOpen ? 'rotate-180' : ''}`} />
           </button>
