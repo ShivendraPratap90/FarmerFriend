@@ -36,7 +36,7 @@ GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
 GROQ_MODEL = "qwen/qwen3.8-27b"
 
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
-GEMINI_MODEL = "gemini-2.5-flash"
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.8-flash")
 
 SYSTEM_INSTRUCTION = """You are FarmerFriend Kisan AI (किसान मित्र एआई), an expert agricultural scientist and field agronomic advisor dedicated to Indian farmers.
 
@@ -177,44 +177,18 @@ class AgronomicChatEngine:
             return None
 
     def _call_gemini(self, query: str, requested_lang: str) -> Optional[str]:
-        """Calls Google Gemini API with system instructions for agricultural guidance."""
-        if not self.gemini_key:
-            return None
-
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.gemini_model}:generateContent?key={self.gemini_key}"
-        lang_prompt = "Reply in Hindi (हिंदी)." if (requested_lang == "hi" or is_hindi_text(query)) else "Reply in English."
-
-        payload = {
-            "system_instruction": {
-                "parts": [{"text": SYSTEM_INSTRUCTION}]
-            },
-            "contents": [
-                {
-                    "role": "user",
-                    "parts": [{"text": f"[{lang_prompt}] User question: {query}"}]
-                }
-            ],
-            "generationConfig": {
-                "temperature": 0.3,
-                "maxOutputTokens": 800,
-            }
-        }
-
+        """Calls Google Gemini API using official SDK service with automatic retry."""
         try:
-            req = urllib.request.Request(
-                url,
-                data=json.dumps(payload).encode("utf-8"),
-                headers={"Content-Type": "application/json"}
-            )
-            with urllib.request.urlopen(req, timeout=10) as response:
-                result = json.loads(response.read().decode("utf-8"))
-                candidates = result.get("candidates", [])
-                if candidates:
-                    parts = candidates[0].get("content", {}).get("parts", [])
-                    if parts and "text" in parts[0]:
-                        return parts[0]["text"].strip()
+            from gemini_service import gemini_service
+            if not gemini_service.is_configured:
+                return None
+            res = gemini_service.generate_chat_response(query, language="hi" if (requested_lang == "hi" or is_hindi_text(query)) else "en")
+            reply = res.get("message")
+            if reply:
+                return reply.strip()
         except Exception as e:
-            return None
+            print(f"[!] Gemini chat engine call notice: {e}")
+        return None
 
     def _generate_agronomic_advisory(self, query: str, is_hindi: bool) -> str:
         """Deep, tailored agronomic recommendations when offline or quota-limited."""

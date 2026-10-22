@@ -14,7 +14,12 @@ import urllib.request
 import urllib.error
 import torch
 from PIL import Image
-from transformers import AutoModelForImageClassification, ViTImageProcessor
+
+try:
+    from transformers import AutoModelForImageClassification, ViTImageProcessor
+    HAS_TRANSFORMERS = True
+except ImportError:
+    HAS_TRANSFORMERS = False
 
 MODEL_DIR = os.path.join(os.path.dirname(__file__), "models")
 CONFIG_PATH = os.path.join(MODEL_DIR, "config.json")
@@ -178,6 +183,10 @@ class PlantIdentifier:
 
     def load_model(self):
         """Loads Vision Transformer weights and preprocessor."""
+        if not HAS_TRANSFORMERS:
+            print("[*] Notice: 'transformers' library not installed. OpenPlants ViT running in diagnostic standby mode.")
+            return
+
         if not os.path.exists(WEIGHTS_PATH) or not os.path.exists(CONFIG_PATH):
             print("[!] Notice: OpenPlants model files not found in models/ directory.")
             return

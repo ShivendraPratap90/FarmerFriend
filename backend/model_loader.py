@@ -98,29 +98,36 @@ def get_farmer_friendly_treatments(disease_name: str, crop_name: str, technical_
         except Exception as e:
             print(f"[!] Groq treatment simplification fallback: {e}")
 
-    # 2. Try Gemini 2.5 Flash
-    if GEMINI_API_KEY:
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={GEMINI_API_KEY}"
-        payload = {
-            "contents": [{"parts": [{"text": prompt}]}],
-            "generationConfig": {"response_mime_type": "application/json", "temperature": 0.2}
-        }
-
-        try:
-            req = urllib.request.Request(
-                url,
-                data=json.dumps(payload).encode("utf-8"),
-                headers={"Content-Type": "application/json"}
+    # 2. Try Gemini (gemini-3.8-flash with fallback to gemini-3.5-flash-lite)
+    try:
+        from gemini_service import gemini_service
+        if gemini_service.is_configured:
+            from google.genai import types
+            config = types.GenerateContentConfig(
+                temperature=0.2,
+                response_mime_type="application/json",
             )
-            with urllib.request.urlopen(req, timeout=8) as resp:
-                data = json.loads(resp.read().decode("utf-8"))
-                txt = data["candidates"][0]["content"]["parts"][0]["text"]
-                simplified = json.loads(txt)
-                if isinstance(simplified, list) and len(simplified) == len(technical_treatments):
-                    SIMPLIFIED_TREATMENTS_CACHE[cache_key] = simplified
-                    return simplified
-        except Exception as e:
-            print(f"[!] Gemini treatment simplification fallback: {e}")
+            for m in [gemini_service.model_name, "gemini-3.5-flash-lite"]:
+                try:
+                    resp = gemini_service.client.models.generate_content(
+                        model=m,
+                        contents=prompt,
+                        config=config
+                    )
+                    txt = (resp.text or "").strip()
+                    if txt.startswith("```"):
+                        txt = re.sub(r"^```(?:json)?\s*", "", txt)
+                        txt = re.sub(r"\s*```$", "", txt)
+                    simplified = json.loads(txt)
+                    if isinstance(simplified, list) and len(simplified) == len(technical_treatments):
+                        SIMPLIFIED_TREATMENTS_CACHE[cache_key] = simplified
+                        return simplified
+                except Exception:
+                    continue
+    except Exception as e:
+        print(f"[!] Gemini treatment simplification notice: {e}")
+
+
 
     # 3. Robust Expert Agronomic Rule-Based Fallback
     simplified = []

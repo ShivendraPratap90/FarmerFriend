@@ -16,10 +16,11 @@ import uvicorn
 from model_loader import predictor, PLANT_VILLAGE_CLASSES, WEIGHTS_PATH_PTH, WEIGHTS_PATH_PT
 from ai_chat_engine import chat_engine
 from plant_identifier import plant_identifier
+from gemini_service import gemini_service
 
 app = FastAPI(
     title="FarmerFriend AI Agriculture API",
-    description="Backend microservice using OpenPlants ViT, EfficientNet-B0, Grad-CAM, and Gemini 2.5 Flash",
+    description="Backend microservice using OpenPlants ViT, EfficientNet-B0, Grad-CAM, and Gemini 3.8 Flash",
     version="2.1.0"
 )
 
@@ -44,6 +45,7 @@ def read_root():
         "status": "online",
         "diseaseModelLoaded": predictor.is_model_loaded,
         "plantIdentifierLoaded": plant_identifier.is_loaded,
+        "gemini": gemini_service.get_status(),
         "device": str(predictor.device),
         "docsUrl": "/docs"
     }
@@ -58,7 +60,15 @@ def health_check():
         "weightsFilePresent": weights_found,
         "weightsDirectory": os.path.dirname(WEIGHTS_PATH_PTH),
         "device": str(predictor.device),
-        "totalSupportedClasses": len(PLANT_VILLAGE_CLASSES)
+        "totalSupportedClasses": len(PLANT_VILLAGE_CLASSES),
+        "gemini": gemini_service.get_status()
+    }
+
+@app.get("/api/ai-chat/status")
+def ai_chat_status():
+    return {
+        "success": True,
+        "data": gemini_service.get_status()
     }
 
 @app.get("/api/classes")
@@ -137,9 +147,10 @@ async def detect_disease(
         )
 
 @app.post("/api/chat")
+@app.post("/api/ai-chat")
 async def chat_endpoint(req: ChatRequest):
     """
-    Bilingual Agronomic AI Chatbot endpoint powered by Gemini 2.5 Flash.
+    Bilingual Agronomic AI Chatbot endpoint powered by Gemini 3.8 Flash.
     Strictly dedicated to agriculture.
     """
     if not req.message or not req.message.strip():
@@ -152,6 +163,7 @@ async def chat_endpoint(req: ChatRequest):
             "data": {
                 "message": reply,
                 "type": "assistant",
+                "model": gemini_service.model_name if gemini_service.is_configured else "Agronomic Engine",
                 "language": req.language
             }
         }
@@ -162,4 +174,7 @@ async def chat_endpoint(req: ChatRequest):
         )
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    host = os.getenv("HOST", "0.0.0.0")
+    port = int(os.getenv("PORT", "8000"))
+    uvicorn.run("main:app", host=host, port=port, reload=True)
+
