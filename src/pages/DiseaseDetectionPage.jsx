@@ -10,7 +10,22 @@ import { diseaseService } from '../services/mockServices';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
 import { EmptyState } from '../components/common/EmptyState';
 
-const CROPS = ['Tomato', 'Potato', 'Wheat', 'Rice', 'Maize', 'Cotton', 'Mustard', 'Soybean', 'Gram', 'Apple', 'Grape'];
+const CROPS = [
+  'Apple',
+  'Blueberry',
+  'Cherry',
+  'Corn (Maize)',
+  'Grape',
+  'Orange',
+  'Peach',
+  'Pepper Bell',
+  'Potato',
+  'Raspberry',
+  'Soybean',
+  'Squash',
+  'Strawberry',
+  'Tomato'
+];
 const SEVERITY_COLOR = {
   Low: 'badge-green',
   Medium: 'badge-yellow',
@@ -222,7 +237,7 @@ export const DiseaseDetectionPage = () => {
                       </p>
                     ) : (
                       <p className="text-[11px] text-amber-800 dark:text-amber-300 mt-1.5 font-medium bg-amber-50 dark:bg-amber-950/50 p-2 rounded-lg border border-amber-200 dark:border-amber-800/60">
-                        ⚠️ Note: This specific plant is not in our diagnostic dropdown. Please select the closest crop category below or choose manually.
+                        ⚠️ Note: This plant is not among the 14 crops trained for neural disease diagnosis. Please select one of the trained crop categories below if applicable.
                       </p>
                     )}
                   </div>

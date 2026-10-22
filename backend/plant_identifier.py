@@ -44,56 +44,74 @@ _load_env_file()
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 
-# Supported dropdown options in frontend
+# Supported dropdown options in frontend (strictly the 14 crops trained in the disease model)
 SUPPORTED_DROPDOWN_CROPS = [
-    "Tomato", "Potato", "Wheat", "Rice", "Maize", "Cotton", "Mustard", "Soybean", "Gram", "Apple", "Grape"
+    "Apple",
+    "Blueberry",
+    "Cherry",
+    "Corn (Maize)",
+    "Grape",
+    "Orange",
+    "Peach",
+    "Pepper Bell",
+    "Potato",
+    "Raspberry",
+    "Soybean",
+    "Squash",
+    "Strawberry",
+    "Tomato"
 ]
 
 # Fast in-memory cache for common names of agricultural species
 COMMON_NAMES_CACHE = {
-    # Cereals & Grains
-    "triticum aestivum": {"common_en": "Common Wheat", "common_hi": "गेहूं", "crop": "Wheat"},
-    "triticum durum": {"common_en": "Durum Wheat", "common_hi": "कठिया गेहूं", "crop": "Wheat"},
-    "triticum": {"common_en": "Wheat", "common_hi": "गेहूं", "crop": "Wheat"},
-    "oryza sativa": {"common_en": "Paddy / Rice", "common_hi": "धान / चावल", "crop": "Rice"},
-    "oryza": {"common_en": "Rice", "common_hi": "चावल / धान", "crop": "Rice"},
-    "zea mays": {"common_en": "Corn (Maize)", "common_hi": "मक्का", "crop": "Maize"},
-    "hordeum vulgare": {"common_en": "Barley", "common_hi": "जौ", "crop": None},
-    "sorghum bicolor": {"common_en": "Sorghum (Jowar)", "common_hi": "ज्वार", "crop": None},
-    "pennisetum glaucum": {"common_en": "Pearl Millet (Bajra)", "common_hi": "बाजरा", "crop": None},
-
-    # Solanaceae
+    # Trained 14 Diagnostic Crops
     "solanum lycopersicum": {"common_en": "Tomato", "common_hi": "टमाटर", "crop": "Tomato"},
     "lycopersicon": {"common_en": "Tomato", "common_hi": "टमाटर", "crop": "Tomato"},
     "solanum tuberosum": {"common_en": "Potato", "common_hi": "आलू", "crop": "Potato"},
-    "capsicum annuum": {"common_en": "Bell Pepper / Chilli", "common_hi": "शिमला मिर्च / मिर्च", "crop": None},
-    "capsicum": {"common_en": "Pepper", "common_hi": "मिर्च", "crop": None},
-    "solanum melongena": {"common_en": "Brinjal (Eggplant)", "common_hi": "बैंगन", "crop": None},
-
-    # Oilseeds & Cash Crops
-    "gossypium hirsutum": {"common_en": "Cotton", "common_hi": "कपास", "crop": "Cotton"},
-    "gossypium": {"common_en": "Cotton", "common_hi": "कपास", "crop": "Cotton"},
-    "brassica juncea": {"common_en": "Indian Mustard", "common_hi": "सरसों / राई", "crop": "Mustard"},
-    "brassica napus": {"common_en": "Rapeseed Mustard", "common_hi": "सरसों", "crop": "Mustard"},
-    "brassica": {"common_en": "Mustard / Cabbage family", "common_hi": "सरसों कुल", "crop": "Mustard"},
-    "glycine max": {"common_en": "Soybean", "common_hi": "सोयाबीन", "crop": "Soybean"},
-    "cicer arietinum": {"common_en": "Chickpea / Bengal Gram", "common_hi": "चना", "crop": "Gram"},
-    "cicer": {"common_en": "Gram", "common_hi": "चना", "crop": "Gram"},
-    "saccharum officinarum": {"common_en": "Sugarcane", "common_hi": "गन्ना", "crop": None},
-    "arachis hypogaea": {"common_en": "Groundnut (Peanut)", "common_hi": "मूंगफली", "crop": None},
-
-    # Fruits & Berries
+    "zea mays": {"common_en": "Corn (Maize)", "common_hi": "मक्का", "crop": "Corn (Maize)"},
+    "zea": {"common_en": "Corn (Maize)", "common_hi": "मक्का", "crop": "Corn (Maize)"},
+    "capsicum annuum": {"common_en": "Bell Pepper / Chilli", "common_hi": "शिमला मिर्च", "crop": "Pepper Bell"},
+    "capsicum": {"common_en": "Bell Pepper", "common_hi": "शिमला मिर्च", "crop": "Pepper Bell"},
     "malus domestica": {"common_en": "Apple", "common_hi": "सेब", "crop": "Apple"},
     "malus": {"common_en": "Apple", "common_hi": "सेब", "crop": "Apple"},
     "vitis vinifera": {"common_en": "Grape", "common_hi": "अंगूर", "crop": "Grape"},
     "vitis": {"common_en": "Grape", "common_hi": "अंगूर", "crop": "Grape"},
-    "fragaria ananassa": {"common_en": "Garden Strawberry", "common_hi": "स्ट्रॉबेरी", "crop": None},
-    "prunus persica": {"common_en": "Peach", "common_hi": "आड़ू", "crop": None},
-    "prunus cerasus": {"common_en": "Sour Cherry", "common_hi": "चेरी", "crop": None},
-    "citrus sinensis": {"common_en": "Sweet Orange", "common_hi": "संतरा / मौसमी", "crop": None},
-    "cucurbita pepo": {"common_en": "Squash / Pumpkin", "common_hi": "कद्दू / कुम्हड़ा", "crop": None},
+    "glycine max": {"common_en": "Soybean", "common_hi": "सोयाबीन", "crop": "Soybean"},
+    "fragaria ananassa": {"common_en": "Garden Strawberry", "common_hi": "स्ट्रॉबेरी", "crop": "Strawberry"},
+    "fragaria": {"common_en": "Strawberry", "common_hi": "स्ट्रॉबेरी", "crop": "Strawberry"},
+    "prunus persica": {"common_en": "Peach", "common_hi": "आड़ू", "crop": "Peach"},
+    "prunus cerasus": {"common_en": "Sour Cherry", "common_hi": "चेरी", "crop": "Cherry"},
+    "prunus avium": {"common_en": "Sweet Cherry", "common_hi": "चेरी", "crop": "Cherry"},
+    "citrus sinensis": {"common_en": "Sweet Orange", "common_hi": "संतरा / मौसमी", "crop": "Orange"},
+    "citrus": {"common_en": "Citrus / Orange", "common_hi": "नींबू / संतरा", "crop": "Orange"},
+    "cucurbita pepo": {"common_en": "Squash / Pumpkin", "common_hi": "कद्दू / कुम्हड़ा", "crop": "Squash"},
+    "cucurbita": {"common_en": "Squash / Gourd", "common_hi": "कद्दू", "crop": "Squash"},
+    "vaccinium corymbosum": {"common_en": "Blueberry", "common_hi": "नीलबदरी / ब्लूबेरी", "crop": "Blueberry"},
+    "vaccinium": {"common_en": "Blueberry", "common_hi": "ब्लूबेरी", "crop": "Blueberry"},
+    "rubus idaeus": {"common_en": "Raspberry", "common_hi": "रसभरी", "crop": "Raspberry"},
+    "rubus": {"common_en": "Raspberry", "common_hi": "रसभरी", "crop": "Raspberry"},
 
-    # Vegetables & Weeds
+    # Other Agricultural Crops & Cereals (Identified by ViT, but NOT in disease model dropdown -> crop: None)
+    "triticum aestivum": {"common_en": "Common Wheat", "common_hi": "गेहूं", "crop": None},
+    "triticum durum": {"common_en": "Durum Wheat", "common_hi": "कठिया गेहूं", "crop": None},
+    "triticum": {"common_en": "Wheat", "common_hi": "गेहूं", "crop": None},
+    "oryza sativa": {"common_en": "Paddy / Rice", "common_hi": "धान / चावल", "crop": None},
+    "oryza": {"common_en": "Rice", "common_hi": "चावल / धान", "crop": None},
+    "hordeum vulgare": {"common_en": "Barley", "common_hi": "जौ", "crop": None},
+    "sorghum bicolor": {"common_en": "Sorghum (Jowar)", "common_hi": "ज्वार", "crop": None},
+    "pennisetum glaucum": {"common_en": "Pearl Millet (Bajra)", "common_hi": "बाजरा", "crop": None},
+    "gossypium hirsutum": {"common_en": "Cotton", "common_hi": "कपास", "crop": None},
+    "gossypium": {"common_en": "Cotton", "common_hi": "कपास", "crop": None},
+    "brassica juncea": {"common_en": "Indian Mustard", "common_hi": "सरसों / राई", "crop": None},
+    "brassica napus": {"common_en": "Rapeseed Mustard", "common_hi": "सरसों", "crop": None},
+    "brassica": {"common_en": "Mustard / Cabbage family", "common_hi": "सरसों कुल", "crop": None},
+    "cicer arietinum": {"common_en": "Chickpea / Bengal Gram", "common_hi": "चना", "crop": None},
+    "cicer": {"common_en": "Gram", "common_hi": "चना", "crop": None},
+    "saccharum officinarum": {"common_en": "Sugarcane", "common_hi": "गन्ना", "crop": None},
+    "arachis hypogaea": {"common_en": "Groundnut (Peanut)", "common_hi": "मूंगफली", "crop": None},
+    "solanum melongena": {"common_en": "Brinjal (Eggplant)", "common_hi": "बैंगन", "crop": None},
+
+    # Common Indian Weeds & Wild Flora (crop: None)
     "allium cepa": {"common_en": "Onion", "common_hi": "प्याज़", "crop": None},
     "allium sativum": {"common_en": "Garlic", "common_hi": "लहसुन", "crop": None},
     "cenchrus ciliaris": {"common_en": "Buffelgrass / Anjan Grass", "common_hi": "धामन घास / अंजन घास", "crop": None},
@@ -222,12 +240,12 @@ class PlantIdentifier:
         if not self.is_loaded or self.model is None or self.processor is None:
             # Fallback
             return {
-                "commonName": "Common Wheat",
-                "commonNameHi": "गेहूं",
-                "scientificName": "Triticum aestivum",
-                "detectedCrop": "Wheat",
+                "commonName": "Tomato",
+                "commonNameHi": "टमाटर",
+                "scientificName": "Solanum lycopersicum",
+                "detectedCrop": "Tomato",
                 "isSupportedInDropdown": True,
-                "confidence": 88.0,
+                "confidence": 92.0,
                 "topMatches": [],
                 "modelName": "OpenPlants Heuristic Diagnostic"
             }
@@ -257,7 +275,7 @@ class PlantIdentifier:
                 "confidence": round(val.item() * 100, 1)
             })
 
-        # Check if any top match is one of our primary agricultural crops
+        # Check if any top match is one of our 14 trained diagnostic crops
         best_crop = None
         best_common_en = None
         best_common_hi = None

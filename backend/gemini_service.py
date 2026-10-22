@@ -9,10 +9,22 @@ import os
 import time
 import logging
 from typing import Optional, List, Dict, Any
-from dotenv import load_dotenv
 
-# Load local environment configuration
-load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
+def _load_env_file():
+    env_path = os.path.join(os.path.dirname(__file__), ".env")
+    if os.path.exists(env_path):
+        try:
+            with open(env_path, "r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if line and not line.startswith("#") and "=" in line:
+                        k, v = line.split("=", 1)
+                        if k.strip() not in os.environ:
+                            os.environ[k.strip()] = v.strip().strip('"').strip("'")
+        except Exception:
+            pass
+
+_load_env_file()
 
 logger = logging.getLogger("farmerfriend.gemini")
 
